@@ -27,9 +27,19 @@ void __print_statistics() {
   }
   std::sort(items.rbegin(), items.rend());
   for (const auto& [time, target] : items) {
+    auto diff_s = (time) / 1000000000;
+    auto diff_ms = (time) / 1000000;
     auto diff_us = (time) / 1000;
     auto diff_ns = (time) % 1000;
-    std::clog << target << " time: " << diff_us << "." << diff_ns << " us\n";
+    if (diff_s > 0) {
+      std::clog << target << " time: " << diff_s << "." << diff_ms << " s\n";
+    } else if (diff_ms > 0) {
+      std::clog << target << " time: " << diff_ms << "." << diff_us << " ms\n";
+    } else if (diff_us > 0) {
+      std::clog << target << " time: " << diff_us << "." << diff_ns << " us\n";
+    } else {
+      std::clog << target << " time: " << diff_ns << " ns\n";
+    }
   }
 }
 
