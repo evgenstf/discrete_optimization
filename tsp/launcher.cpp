@@ -1,25 +1,40 @@
 #include "base/graph.h"
 #include "base/rand.h"
 
+Graph<20000> graph;
 
 int main() {
-  Graph<20000> graph;
   graph.init();
 
-  graph.set_rand_permutation();
+  graph.set_2_optimal_permutation();
   graph.recalculate_distation();
 
   std::cout << "distation: " << graph.distation() << std::endl;
 
-  const int kIterationsCount = 1e8;
-  for (int i = 0; i < kIterationsCount; ++i) {
+  int kMaxTemperature = 2e9;
+  for (int temperature = kMaxTemperature; temperature > 0; --temperature) {
     auto a = rnd() % graph.size();
     auto b = rnd() % graph.size();
     auto profit = graph.swap_profit(a, b);
-    if (profit > 0) {
-      //DBG("swap: " << a << ' ' << b << " profit: " << profit << " new distance: " << graph.distation() - profit);
+    if ((profit > 0)) {
       graph.swap(a, b, profit);
     }
+    if (temperature % 1000000 == 0) {
+      DBG("distation: " << graph.distation());
+    }
+    /*
+    else if (
+        profit != 0 &&
+        (-profit) / graph.distation() < (0.00001 * temperature / kMaxTemperature)
+    ) {
+      DBG(
+          "profit: " << profit <<
+          " ratio: " << (-profit) / graph.distation() <<
+          " threshold: " << (0.0001 * temperature / kMaxTemperature)
+      );
+      graph.swap(a, b, profit);
+    }
+  */
   }
 
   graph.recalculate_distation();

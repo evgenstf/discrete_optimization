@@ -27,9 +27,9 @@ void __print_statistics() {
   }
   std::sort(items.rbegin(), items.rend());
   for (const auto& [time, target] : items) {
-    auto diff_s = (time) / 1000000000;
-    auto diff_ms = (time) / 1000000;
-    auto diff_us = (time) / 1000;
+    auto diff_s = (time) / 1000000000 % 1000;
+    auto diff_ms = (time) / 1000000 % 1000;
+    auto diff_us = (time) / 1000 % 1000;
     auto diff_ns = (time) % 1000;
     if (diff_s > 0) {
       std::clog << target << " time: " << diff_s << "." << diff_ms << " s\n";
@@ -66,8 +66,10 @@ private:
 #define PRINT_PERF_STATISTICS() __print_statistics();
 
 #define PERF() PerfCalculator __perf_calculator(class_name_ + std::string("::") + std::string(__func__));
+#define CPERF(target) PerfCalculator __perf_calculator(class_name_ + std::string("::") + std::string(__func__) + std::string("::") + target);
 
 #else
 #define PERF(message)
+#define CPERF(message)
 #define PRINT_PERF_STATISTICS(message)
 #endif

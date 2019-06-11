@@ -2,9 +2,14 @@
 #include "log.h"
 #include "perf.h"
 #include "rand.h"
+#include <algorithm>
 #include <iostream>
 #include <cstdio>
 #include <cmath>
+#include <vector>
+#include <set>
+
+using namespace std;
 
 double dist(double* l, double* r) {
   return std::hypot(l[0] - r[0], l[1] - r[1]);
@@ -45,6 +50,57 @@ void set_rand_permutation() {
     int v = perm[i];
     left_[v] = perm[((i - 1) + N) % N];
     right_[v] = perm[(i + 1) % N];
+  }
+}
+
+void set_2_optimal_permutation() {
+  PERF();
+  dsu_init();
+  int cnt = 0;
+  {
+    CPERF("init");
+  for (int i = 0; i < N; ++i) {
+    used_[i] = false;
+    qwe_cnt = 0;
+    for (int j = i + 1; j < N; ++j) {
+      qwe[qwe_cnt++] = make_pair(dist(points_[i], points_[j]), make_pair(i, j));
+      if (qwe_cnt >= sqrt(kSize)) {
+        sort(qwe, qwe + qwe_cnt);
+        qwe_cnt = 10;
+      }
+    }
+    for (int j = 0; j < 10; ++j) {
+      edges_[cnt++] = qwe[j];
+    }
+  }
+  }
+  sort(edges_, edges_ + cnt);
+  DBG("sorted");
+  G.resize(N);
+  for (int i = 0; i < cnt; ++i) {
+    double dd = edges_[i].first;
+    int a = edges_[i].second.first;
+    int b = edges_[i].second.second;
+
+    if (dsu_what(a) != dsu_what(b)) {
+      dsu_merge(a, b);
+      G[a].push_back(b);
+      G[b].push_back(a);
+    }
+  }
+
+  for (int i = 0; i < N; ++i) {
+    if (!used_[i]) {
+      DBG("go from i: " << i)
+      go(i);
+    }
+  }
+
+
+  for (int i = 0; i < N; ++i) {
+    int v = way_[i];
+    left_[v] = way_[((i - 1) + N) % N];
+    right_[v] = way_[(i + 1) % N];
   }
 }
 
@@ -119,12 +175,61 @@ void swap(int a, int b, double profit) {
 }
 
 private:
+  inline void dsu_init() {
+    for (int i = 0; i < N; ++i) {
+      parent_[i] = i;
+      rnk_[i] = 0;
+    }
+  }
+
+  inline int dsu_what(int a) {
+    if (parent_[a] == a) {
+      return parent_[a];
+    }
+    return parent_[a] = dsu_what(parent_[a]);
+  }
+
+  inline void dsu_merge(int a, int b) {
+    a = dsu_what(a);
+    b = dsu_what(b);
+    if (rnk_[a] > rnk_[b]) {
+      parent_[b] = a;
+      ++rnk_[a];
+    } else {
+      parent_[a] = b;
+      ++rnk_[b];
+    }
+  }
+
   int N;
   double points_[kSize][2];
   int left_[kSize];
   int right_[kSize];
   
   double distation_{0};
+
+  int parent_[kSize];
+  int rnk_[kSize];
+  pair<double, pair<int, int>> edges_[kSize * 10];
+
+
+  vector<vector<int>> G;
+  bool used_[kSize];
+
+  vector<int> way_;
+  int qwe_cnt;
+  pair<double, pair<int, int>> qwe[kSize];
+
+
+  void go(int v) {
+    used_[v] = true;
+    way_.push_back(v);
+    for (auto to : G[v]) {
+      if (!used_[to]) {
+        go(to);
+      }
+    }
+  }
 
   constexpr static char class_name_[] = "Graph";
 };
