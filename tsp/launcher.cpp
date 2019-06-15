@@ -6,7 +6,8 @@ Graph<20000> graph;
 int main() {
   graph.init();
 
-  graph.set_rand_permutation();
+  //graph.set_rand_permutation();
+  graph.set_greed_permutation();
   //graph.set_2_optimal_permutation();
   graph.recalculate_distation();
 
@@ -14,7 +15,7 @@ int main() {
 
 
 
-  double temp = 1000;
+  double temp = 10;
   double coolingRate = 0.9999999;
   while (temp > 1) {
     auto a = rnd() % graph.size();
@@ -39,7 +40,7 @@ int main() {
           " rnd_prob: " << rnd_prob <<
           " profit: " << profit
       );
-      graph.swap(a, b, profit);
+      //graph.swap(a, b, profit);
     }
 
     temp *= coolingRate;

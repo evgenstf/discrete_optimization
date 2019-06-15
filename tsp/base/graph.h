@@ -40,6 +40,47 @@ void set_rand_permutation() {
   for (int i = 0; i < N; ++i) {
     std::swap(perm_[i], perm_[(i + rnd()) % N]);
   }
+  perm_cnt = N;
+}
+
+void set_dummy_permutation() {
+  PERF();
+  for (size_t i = 0; i < N; i++) {
+    perm_[i] = i;
+  }
+  perm_cnt = N;
+}
+
+void set_greed_permutation() {
+  PERF();
+
+  set_dummy_permutation();
+
+  recalculate_distation();
+  DBG("dist: " << distation_);
+
+  size_t start =
+      std::min_element(
+          points_,
+          points_ + N,
+          [](const auto& lhs, const auto& rhs) {
+              return (lhs[0] + rhs[1]) < (rhs[0] + rhs[1]);
+          }
+      ) - points_;
+
+  std::swap(perm_[start], perm_[0]);
+  for (size_t i = 0; i < N - 1; i++) {
+    size_t mini = i + 1;
+    double minx = dist(points_[perm_[i]], points_[perm_[i + 1]]);
+    for (size_t j = i + 2; j < N; j++) {
+      auto qwe = dist(points_[perm_[i]], points_[perm_[j]]);
+      if (minx > qwe) {
+        minx = qwe;
+        mini = j;
+      }
+    }
+    std::swap(perm_[i + 1], perm_[mini]);
+  }
 }
 
 void set_2_optimal_permutation() {
