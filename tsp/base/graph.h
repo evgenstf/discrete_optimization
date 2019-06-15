@@ -93,10 +93,11 @@ void set_2_optimal_permutation() {
     used_[i] = false;
     qwe_cnt = 0;
     for (int j = i + 1; j < N; ++j) {
-      qwe[qwe_cnt++] = make_pair(dist(points_[i], points_[j]), make_pair(i, j));
-      if (qwe_cnt >= sqrt(kSize)) {
+      auto dst = dist(points_[i], points_[j]);
+      if (qwe_cnt < 10 || dst < qwe[qwe_cnt - 1].first) {
+        qwe[qwe_cnt++] = make_pair(dst, make_pair(i, j));
         sort(qwe, qwe + qwe_cnt);
-        qwe_cnt = 10;
+        qwe_cnt = min(qwe_cnt, 10);
       }
     }
     for (int j = 0; j < 10; ++j) {
@@ -166,6 +167,38 @@ void swap(int a, int b, double profit) {
   distation_ -= profit;
 }
 
+void init_nearest() {
+  PERF();
+  for (int i = 0; i < N; ++i) {
+    nearest_cnt[i] = 0;
+  }
+  for (int i = 0; i < N; ++i) {
+    for (int j = i + 1; j < N; ++j) {
+      auto dst = dist(points_[i], points_[j]);
+
+      //DBG("try update: i: " << i << " j: " << j << " dst: " << dst);
+      if (nearest_cnt[i] < 10 || dst < nearest_[i][nearest_cnt[i] - 1].first) {
+        if (nearest_cnt[i] == 10) {
+          break;
+        }
+        nearest_[i][nearest_cnt[i]++] = make_pair(dst, j);
+        sort(nearest_[i], nearest_[i] + nearest_cnt[i]);
+        nearest_cnt[i] = min(nearest_cnt[i], 10);
+      }
+
+      if (nearest_cnt[j] < 10 || dst < nearest_[j][nearest_cnt[j] - 1].first) {
+        nearest_[j][nearest_cnt[j]++] = make_pair(dst, i);
+        sort(nearest_[j], nearest_[j] + nearest_cnt[j]);
+        nearest_cnt[j] = min(nearest_cnt[j], 10);
+      }
+    }
+  }
+}
+
+const pair<double, int>* nearest_for(int p) {
+  return nearest_[p];
+}
+
 private:
   inline void dsu_init() {
     for (int i = 0; i < N; ++i) {
@@ -206,12 +239,18 @@ private:
   pair<double, pair<int, int>> edges_[kSize * 10];
 
 
+  int nearest_cnt[kSize];
+  pair<double, int> nearest_[kSize][10];
+
+
   vector<vector<int>> G;
   bool used_[kSize];
 
   vector<int> way_;
   int qwe_cnt;
-  pair<double, pair<int, int>> qwe[kSize];
+  pair<double, pair<int, int>> qwe[200];
+  int asd_cnt;
+  pair<double, int> asd[200];
 
 
   void go(int v) {
