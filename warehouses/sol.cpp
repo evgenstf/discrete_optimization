@@ -115,34 +115,47 @@ vector<vector<double>> use_cost;
 using Glpk = glp_prob;
 using Parameters = glp_iocp;
 
-Glpk* init_glpk(int n, int m) {
-  PERF();
-  Glpk* result = glp_create_prob();
+namespace {
 
-  glp_set_obj_dir(result, GLP_MIN);
-  glp_add_rows(result, n + m);
-
-  for (int i = 0; i < m; ++i) {
-    glp_set_row_bnds(result, n + i + 1, GLP_FX, 1, 1);
-  }
+void init_cols(Glpk* glpk, int n, int m) {
+  glp_add_cols(glpk, n * (m + 1));
 
   for (int i = 0; i < n; ++i) {
-    glp_set_row_bnds(result, i + 1, GLP_UP, 0, 0);
+    glp_set_obj_coef(glpk, n * m + i + 1, warehouses[i].open_cost);
+    glp_set_col_kind(glpk, n * m + i + 1, GLP_BV);
   }
-
-  glp_add_cols(result, n * (m + 1));
 
   for (int i = 0; i < n; ++i) {
     for (int j = 0; j < m; ++j) {
-      glp_set_obj_coef(result, i * m + j + 1, use_cost[i][j]);
-      glp_set_col_bnds(result, i * m + j + 1, GLP_LO, 0, 0);
+      glp_set_obj_coef(glpk, i * m + j + 1, use_cost[i][j]);
+      glp_set_col_bnds(glpk, i * m + j + 1, GLP_LO, 0, 0);
     }
+  }
+}
+
+void init_rows(Glpk* glpk, int n, int m) {
+  glp_add_rows(glpk, n + m);
+
+  for (int i = 0; i < m; ++i) {
+    glp_set_row_bnds(glpk, n + i + 1, GLP_FX, 1, 1);
   }
 
   for (int i = 0; i < n; ++i) {
-    glp_set_obj_coef(result, n * m + i + 1, warehouses[i].open_cost);
-    glp_set_col_kind(result, n * m + i + 1, GLP_BV);
+    glp_set_row_bnds(glpk, i + 1, GLP_UP, 0, 0);
   }
+}
+
+}  // namespace
+
+Glpk* init_glpk(int n, int m) {
+  DBG("start init_glpk");
+  PERF();
+  Glpk* result = glp_create_prob();
+
+  init_rows(result, n, m);
+  init_cols(result, n, m);
+
+  glp_set_obj_dir(result, GLP_MIN);
 
   return result;
 }
@@ -152,13 +165,14 @@ Parameters init_parameters() {
 
   glp_init_iocp(&result);
 
-  result.binarize = GLP_ON;
+
+  result.binarize = 1;
   result.bt_tech = GLP_BT_BPH;
-  result.clq_cuts = GLP_ON;
-  result.cov_cuts = GLP_ON;
-  result.mir_cuts = GLP_ON;
+  result.clq_cuts = 1;
+  result.cov_cuts = 1;
+  result.mir_cuts = 1;
   result.msg_lev = GLP_MSG_OFF;
-  result.presolve = GLP_ON;
+  result.presolve = 1;
   result.tm_lim = 10000;
 
   return result;
@@ -166,6 +180,7 @@ Parameters init_parameters() {
 
 
 void init_matrix(Glpk* glpk, int n, int m) {
+  DBG("start init_matrix");
   PERF();
   int len = n * (2 * m + 1);
 
@@ -197,6 +212,7 @@ void init_matrix(Glpk* glpk, int n, int m) {
 }
 
 void start_glpk(Glpk* glpk, Parameters parameters) {
+  DBG("starting glpk...");
   PERF();
   int dupp = dup(1);
   close(1);
@@ -228,20 +244,25 @@ int main() {
       cin >> x;
     }
   }
+  
+  DBG("read warehouses: " << n << " demands: " << m);
 
   auto* glpk = init_glpk(n, m);
+  DBG("glpk inited");
 
 
   init_matrix(glpk, n, m);
+  DBG("matrix inited");
 
 
   start_glpk(glpk, init_parameters());
+  DBG("glpk finished");
 
 
   vector<int> answer;
 
   for (int i = 0; i < n; ++i) {
-    if (glp_mip_col_val(glpk, n * m + i + 1) > 0.5) {
+    if (glp_mip_col_val(glpk, n * m + i + 1)) {
       answer.push_back(i);
     }
   }
