@@ -1,9 +1,18 @@
 #include "base/graph.h"
 #include "base/rand.h"
+#include <ctime>
 
 Graph<20000> graph;
 
+std::clock_t start;
+
+double get_duration() {
+  return ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
+}
+
 int main() {
+  start = std::clock();
+
   graph.init();
 
   //graph.set_rand_permutation();
@@ -11,7 +20,6 @@ int main() {
   //graph.set_2_optimal_permutation();
   graph.recalculate_distation();
 
-  std::cout << "distation: " << graph.distation() << std::endl;
 
 
   int improve_cnt = 0;
@@ -19,6 +27,7 @@ int main() {
   double temp = 10;
   double coolingRate = 0.9999999;
   while (temp > 1) {
+    CPERF("main while");
     ++total_cnt;
     auto a = rnd() % graph.size();
     auto b = rnd() % graph.size();
@@ -48,11 +57,31 @@ int main() {
 
     temp *= coolingRate;
   }
+
+  while (get_duration() < 9.985) {
+    for (int i = 0; i < 1000; ++i) {
+      auto a = rnd() % graph.size();
+      auto b = rnd() % graph.size();
+      auto profit = graph.swap_profit(a, b);
+
+      double rnd_prob = (1.0 * (rnd() % 10000)) / 10000.0 + 0.1;
+
+      if (profit > 0) {
+        graph.swap(a, b, profit);
+        ++improve_cnt;
+      }
+    }
+  }
+
   DBG("improve/total: " << improve_cnt << "/" << total_cnt << " part: " << 1.0 * improve_cnt / total_cnt);
 
-  std::cout << "final: " << graph.distation() << std::endl;;
+  //std::cout << "final: " << graph.distation() << std::endl;;
   graph.recalculate_distation();
-  std::cout << "distation 2: " << graph.distation() << std::endl;
+  //std::cout << "distation 2: " << graph.distation() << std::endl;
+  //
+
+  graph.print();
+
 
   PRINT_PERF_STATISTICS();
 }

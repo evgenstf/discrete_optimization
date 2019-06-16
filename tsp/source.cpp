@@ -1,7 +1,106 @@
+// evgenii kazakov
 #pragma once
-#include "log.h"
-#include "perf.h"
-#include "rand.h"
+
+#include <iostream>
+
+using namespace std;
+
+#define enable_logging 1
+
+constexpr static char class_name_[] = "Solution";
+
+#define LOG(message) if (enable_logging) { clog << "[" << class_name_ << "::" << __func__ << "]: " << message << endl; }
+
+#ifdef DEBUG
+#define DBG(message) if (enable_logging) { clog << "<" << class_name_ << "::" << __func__ << ">: " << message << endl; }
+#else
+#define DBG(message)
+#endif
+
+#define ASSERT(condition, message) { if (!(condition)) { LOG(message); exit(0); } }
+#pragma once
+
+long long __state = 43112351;
+
+inline long long rnd() {
+  __state = (214013 * __state +  2531011);
+  return (__state >> 16) & 0x7FFF;
+}
+#pragma once
+
+
+#ifdef DEBUG
+
+
+#include <algorithm>
+#include <vector>
+#include <chrono>
+#include <map>
+#include <string>
+
+using Nanoseconds = std::chrono::nanoseconds;
+
+long long get_ns() {
+  return std::chrono::time_point_cast<Nanoseconds>(std::chrono::high_resolution_clock::now()).time_since_epoch().count();
+}
+
+static std::map<std::string, long long> __perf_times_;
+
+void __print_statistics() {
+  std::clog << "\n---------PERF STATISTICS--------\n";
+  std::vector<std::pair<long long, std::string>> items;
+  for (const auto& [target, time] : __perf_times_) {
+    items.emplace_back(time, target);
+  }
+  std::sort(items.rbegin(), items.rend());
+  for (const auto& [time, target] : items) {
+    auto diff_s = (time) / 1000000000 % 1000;
+    auto diff_ms = (time) / 1000000 % 1000;
+    auto diff_us = (time) / 1000 % 1000;
+    auto diff_ns = (time) % 1000;
+    if (diff_s > 0) {
+      std::clog << target << " time: " << diff_s << "." << diff_ms << " s\n";
+    } else if (diff_ms > 0) {
+      std::clog << target << " time: " << diff_ms << "." << diff_us << " ms\n";
+    } else if (diff_us > 0) {
+      std::clog << target << " time: " << diff_us << "." << diff_ns << " us\n";
+    } else {
+      std::clog << target << " time: " << diff_ns << " ns\n";
+    }
+  }
+}
+
+class PerfCalculator {
+public:
+  PerfCalculator(std::string target):
+      target_(std::move(target)),
+      start_time_(get_ns()) {}
+
+  ~PerfCalculator() {
+    auto current_time = get_ns();
+    __perf_times_[target_] += (get_ns() - start_time_);
+  }
+
+  
+private:
+  const std::string target_;
+  const long long start_time_;
+
+  constexpr static char class_name_[] = "PerfCalculator";
+
+};
+
+#define PRINT_PERF_STATISTICS() __print_statistics();
+
+#define PERF() PerfCalculator __perf_calculator(class_name_ + std::string("::") + std::string(__func__));
+#define CPERF(target) PerfCalculator __perf_calculator(class_name_ + std::string("::") + std::string(__func__) + std::string("::") + target);
+
+#else
+#define PERF(message)
+#define CPERF(message)
+#define PRINT_PERF_STATISTICS(message)
+#endif
+#pragma once
 #include <algorithm>
 #include <iostream>
 #include <cstdio>
@@ -236,3 +335,88 @@ private:
 
   constexpr static char class_name_[] = "Graph";
 };
+#include <ctime>
+
+Graph<20000> graph;
+
+std::clock_t start;
+
+double get_duration() {
+  return ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
+}
+
+int main() {
+  start = std::clock();
+
+  graph.init();
+
+  //graph.set_rand_permutation();
+  graph.set_greed_permutation();
+  //graph.set_2_optimal_permutation();
+  graph.recalculate_distation();
+
+
+
+  int improve_cnt = 0;
+  int total_cnt = 0;
+  double temp = 10;
+  double coolingRate = 0.9999999;
+  while (temp > 1) {
+    CPERF("main while");
+    ++total_cnt;
+    auto a = rnd() % graph.size();
+    auto b = rnd() % graph.size();
+    auto profit = graph.swap_profit(a, b);
+
+    double rnd_prob = (1.0 * (rnd() % 10000)) / 10000.0 + 0.1;
+
+    if (profit > 0) {
+      graph.swap(a, b, profit);
+      ++improve_cnt;
+    }
+    else if (
+        profit != 0 &&
+        rnd_prob < exp((profit) / temp)
+    ) {
+      DBG(
+          "distation: " << graph.distation() <<
+          " temp: " << temp <<
+          " a: " << a <<
+          " b: " << b << 
+          " accept prob: " << exp((profit) / temp) <<
+          " rnd_prob: " << rnd_prob <<
+          " profit: " << profit
+      );
+      graph.swap(a, b, profit);
+    }
+
+    temp *= coolingRate;
+  }
+
+  while (get_duration() < 9.985) {
+    for (int i = 0; i < 1000; ++i) {
+      auto a = rnd() % graph.size();
+      auto b = rnd() % graph.size();
+      auto profit = graph.swap_profit(a, b);
+
+      double rnd_prob = (1.0 * (rnd() % 10000)) / 10000.0 + 0.1;
+
+      if (profit > 0) {
+        graph.swap(a, b, profit);
+        ++improve_cnt;
+      }
+    }
+  }
+
+  DBG("improve/total: " << improve_cnt << "/" << total_cnt << " part: " << 1.0 * improve_cnt / total_cnt);
+
+  //std::cout << "final: " << graph.distation() << std::endl;;
+  graph.recalculate_distation();
+  //std::cout << "distation 2: " << graph.distation() << std::endl;
+  //
+
+  graph.print();
+
+
+  PRINT_PERF_STATISTICS();
+}

@@ -37,13 +37,6 @@ void init() {
   DBG("read grap size: " << N);
 }
 
-void print() {
-  printf("%lf\n", distation_);
-  for (int i = 0; i < N; ++i) {
-    printf("%d ", points_[i].second + 1);
-  }
-}
-
 void set_rand_permutation() {
   PERF();
   for (int i = 0; i < N; ++i) {

@@ -1,4 +1,24 @@
 #!/bin/bash -e
 rm -rf logs/*
 g++ launcher.cpp -pthread --std=c++17 -O2
-time ./a.out < tests/16862.public
+
+
+
+echo "16862.public"
+time ./a.out < tests/16862.public > answers/16862.public
+
+echo "194.public"
+time ./a.out < tests/194.public > answers/194.public
+
+echo "2.public"
+time ./a.out < tests/2.public > answers/2.public
+
+echo "38.public"
+time ./a.out < tests/38.public > answers/38.public
+
+echo "7146.public"
+time ./a.out < tests/7146.public > answers/7146.public
+
+echo "980.public"
+time ./a.out < tests/980.public > answers/980.public
+

@@ -1,0 +1,4 @@
+#!/bin/bash -e
+rm -rf logs/*
+g++ sol.cpp -pthread --std=c++17 -O2 -DDEBUG -lglpk
+time ./a.out < tests/3.public

@@ -1,0 +1,8 @@
+echo "// evgenii kazakov" > source.cpp
+
+cat base/log.h >> source.cpp
+cat base/rand.h >> source.cpp
+cat base/perf.h >> source.cpp
+cat base/graph.h >> source.cpp
+cat launcher.cpp >> source.cpp
+
