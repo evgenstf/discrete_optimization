@@ -137,32 +137,30 @@ void recalculate_distation() {
 
 double swap_profit(int a, int b) {
   PERF();
-  if (a > b) {
-    std::swap(a, b);
-  }
-  if (perm_[((a - 1) % N + N) % N] == b) {
+
+  if (((a - 1) % N + N) % N == b) {
     return 0;
   }
+
   return
       (
-        dist(points_[perm_[a]], points_[perm_[((a - 1) % N + N) % N]]) +
-        dist(points_[perm_[b]], points_[perm_[((b + 1) % N + N) % N]])
-      ) - 
-      (
-        dist(points_[perm_[b]], points_[perm_[((a - 1) % N + N) % N]]) +
+        dist(points_[perm_[a]], points_[perm_[((a - 1) % N + N) % N]]) -
         dist(points_[perm_[a]], points_[perm_[((b + 1) % N + N) % N]])
+      ) +
+      (
+        dist(points_[perm_[b]], points_[perm_[((b + 1) % N + N) % N]]) -
+        dist(points_[perm_[b]], points_[perm_[((a - 1) % N + N) % N]])
       );
 }
 
 void swap(int a, int b, double profit) {
   PERF();
-  if (a > b) {
-    std::swap(a, b);
+  if (b < a) {
+    b += N;
   }
   for (int i = a, j = b; i < j; ++i, --j) {
-    std::swap(perm_[i], perm_[j]);
+    std::swap(perm_[i % N], perm_[j % N]);
   }
-  //std::reverse(perm_ + a, perm_ + b + 1);
   distation_ -= profit;
 }
 
